@@ -1,0 +1,54 @@
+# Danh sách thầy cô: mỗi dòng một họ tên. Dòng bắt đầu bằng # được bỏ qua.
+# Chỉ nạp khi bảng teachers còn trống (lần chạy đầu). Sau đó thêm qua POST /api/admin/teachers.
+Nguyễn Thị Thơm
+Phạm Đình Chung
+Nguyễn Việt Dũng
+Phan Quang Thành
+Ngô Văn Nhận
+Trần Quang Đại
+Vũ Văn Thương
+Nguyễn Khánh Tùng
+Ngô Quốc Dũng
+Đặng Anh Tuấn
+Nguyễn Trung Nhân
+Nguyễn Tài Quang
+Nguyễn Huy Trung
+Bùi Thị Như
+Võ Thái Anh
+Nguyễn Đức Thành
+Bùi Khắc Ngọc
+Phan Lý Huỳnh
+Nguyễn Xuân Dũng
+Trần Phương Thảo
+Nguyễn Thị Hương
+Đinh Văn Hoàng
+Nguyễn Hồng Anh Tấn
+Trần Minh Hiếu
+Trương Tuấn Anh
+Đỗ Thị Thanh Loan
+Lê Thị Minh Thanh
+Bùi Quang Chung
+Trương Minh Đức
+Trần Huy Long
+Từ Thảo Hương Giang
+Nguyễn Thị Ngọc Anh
+Tạ Quốc Đạt
+Lê Thị Hồng Hạnh
+Vũ Thị Sâm
+Nguyễn Hồng Nga
+Trần Minh Sơn
+Cao Thu Hằng
+Trần Thiện Chính
+Vũ Thị Lan Hương
+Vũ Thị Việt Hà
+Lương Hồng Minh
+Nguyễn Thị Phương Nam
+Đinh Thị Oanh
+Trần Thị Minh Thìn
+Lê Thị Hà Thu
+Đào Thu Hiền
+Đặng Thị Tố Uyên
+Đỗ Hương Hà
+Ngô Thị Mỹ Hà
+Vũ Thị Hoà
+Trịnh Bảo Khánh

@@ -1,0 +1,69 @@
+"use client";
+import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import Intro from "@/components/Intro";
+import Wall from "@/components/Wall";
+
+// Trước 20/11 (giờ VN) mới mời gửi; từ 20/11 trở đi tường chỉ để xem
+const beforeTeachersDay = () => { const vn = new Date(Date.now() + 7 * 3600e3); return vn.getUTCMonth() < 10 || (vn.getUTCMonth() === 10 && vn.getUTCDate() < 20); };
+
+function InviteDialog({ active }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!active || !beforeTeachersDay()) return;
+    try { if (sessionStorage.getItem("invite-seen")) return; } catch {}
+    const t = setTimeout(() => {
+      if (document.body.classList.contains("presenting")) return;
+      ref.current?.showModal();
+      try { sessionStorage.setItem("invite-seen", "1"); } catch {}
+    }, 5000);
+    return () => clearTimeout(t);
+  }, [active]);
+  const close = () => ref.current?.close();
+  return (
+    <dialog ref={ref} className="invite" aria-labelledby="invite-t" onClick={(e) => e.target === ref.current && close()}>
+      <svg className="invite-art" viewBox="0 0 44 44" aria-hidden="true"><use href="#s-seal" width="44" height="44" /></svg>
+      <h2 id="invite-t">Gửi một lời cảm ơn tới thầy cô?</h2>
+      <p>Lời chúc của bạn hiện ẩn danh trên tường này, và thầy cô được gửi riêng sẽ đọc được trong trang của mình.</p>
+      <div className="invite-act">
+        <button className="btn ghost" type="button" onClick={close}>Để sau</button>
+        <Link className="btn" href="/gui" onClick={close}>Viết lời chúc</Link>
+      </div>
+    </dialog>
+  );
+}
+
+export default function Home() {
+  const [intro, setIntro] = useState(true);
+  const [reveal, setReveal] = useState(false);
+  const [presenting, setPresenting] = useState(false);
+
+  useEffect(() => {
+    document.body.classList.toggle("presenting", presenting);
+    const onFs = () => { if (!document.fullscreenElement) setPresenting(false); };
+    document.addEventListener("fullscreenchange", onFs);
+    return () => { document.removeEventListener("fullscreenchange", onFs); document.body.classList.remove("presenting"); };
+  }, [presenting]);
+
+  const togglePresent = async () => {
+    const next = !presenting;
+    setPresenting(next);
+    try { next ? await document.documentElement.requestFullscreen?.() : document.fullscreenElement && (await document.exitFullscreen()); } catch {}
+  };
+
+  return (
+    <section aria-label="Tường lời chúc">
+      {intro && <Intro onDone={() => setIntro(false)} onReveal={() => setReveal(true)} />}
+      <Wall active={!intro || reveal} />
+      <InviteDialog active={!intro} />
+      <div className="dock">
+        <div className="legend" aria-hidden="true">
+          <span><i style={{ background: "var(--leaf-700)" }} />Gửi tất cả thầy cô</span>
+          <span><i style={{ background: "var(--wax)" }} />Gửi riêng</span>
+        </div>
+        <button className="chip-btn" type="button" onClick={() => { setReveal(false); setIntro(true); }}>↻ Xem lại lời mở đầu</button>
+        <button className="chip-btn present" type="button" onClick={togglePresent}>{presenting ? "✕ Thoát trình chiếu" : "⛶ Trình chiếu"}</button>
+      </div>
+    </section>
+  );
+}
