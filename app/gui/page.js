@@ -4,7 +4,15 @@ import { signIn, signOut } from "next-auth/react";
 import { fold } from "@/lib/fold";
 
 const mmss = (ms) => { const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
-const ERR = { email: "Tài khoản này không phải email sinh viên của trường.", AccessDenied: "Tài khoản này không phải email sinh viên của trường." };
+const ERR = {
+  email: "Tài khoản SSO không có email hợp lệ hoặc email không thuộc tên miền được phép.",
+  AccessDenied: "Tài khoản này không được phép đăng nhập gửi lời chúc.",
+  OAuthSignin: "Chưa kết nối được với hệ thống SSO. Bạn thử lại sau ít phút nhé.",
+  OAuthCallback: "Không xác nhận được phiên đăng nhập SSO. Bạn thử đăng nhập lại nhé.",
+  Callback: "Không hoàn tất được đăng nhập. Bạn thử lại nhé.",
+  Configuration: "Đăng nhập SSO chưa được cấu hình đầy đủ. Vui lòng liên hệ ban tổ chức.",
+  CredentialsSignin: "Email đăng nhập thử không hợp lệ hoặc không thuộc tên miền được phép.",
+};
 
 export default function SendPage() {
   const [me, setMe] = useState(null);
@@ -20,16 +28,35 @@ export default function SendPage() {
   const [devEmail, setDevEmail] = useState("");
 
   const loadMe = useCallback(async () => {
-    const m = await fetch("/api/me").then((r) => r.json()).catch(() => null);
-    setMe(m); setLoadedAt(Date.now());
-    if (m?.sentGeneral) setMode("one");
+    try {
+      const response = await fetch("/api/me", { cache: "no-store" });
+      const m = await response.json().catch(() => null);
+      if (!response.ok || !m) {
+        setMe({ user: m?.user || null, error: m?.error || "Không tải được thông tin đăng nhập. Bạn thử lại nhé." });
+        return;
+      }
+      if (m.user) {
+        const teacherResponse = await fetch("/api/teachers", { cache: "no-store" });
+        const list = await teacherResponse.json().catch(() => null);
+        if (!teacherResponse.ok || !Array.isArray(list)) {
+          setMe({ user: m.user, error: "Chưa tải được danh sách thầy cô. Bạn thử lại nhé." });
+          return;
+        }
+        setTeachers(list);
+      }
+      setMe(m);
+      if (m.sentGeneral) setMode("one");
+    } catch {
+      setMe({ error: "Không kết nối được máy chủ. Bạn kiểm tra kết nối và thử lại nhé." });
+    } finally {
+      setLoadedAt(Date.now());
+    }
   }, []);
 
   useEffect(() => {
     loadMe();
-    fetch("/api/teachers").then((r) => r.json()).then(setTeachers).catch(() => {});
     const e = new URLSearchParams(location.search).get("loi") || new URLSearchParams(location.search).get("error");
-    if (e) setResult({ type: "bad", text: ERR[e] || "Đăng nhập không thành công, bạn thử lại nhé." });
+    if (e) setResult({ type: "bad", title: "Chưa đăng nhập được", text: ERR[e] || "Đăng nhập không thành công, bạn thử lại nhé." });
   }, [loadMe]);
 
   const elapsed = now - loadedAt;
@@ -45,6 +72,18 @@ export default function SendPage() {
   const available = teachers.filter((t) => !sentTo.has(t.id));
   const hits = available.filter((t) => fold(t.name).includes(fold(teacherName)));
   const len = [...text].length;
+
+  async function login(provider, options = {}) {
+    if (busy) return;
+    setBusy(true); setResult(null);
+    try {
+      await signIn(provider, { ...options, callbackUrl: "/gui" });
+    } catch {
+      setResult({ type: "bad", title: "Chưa đăng nhập được", text: "Không kết nối được máy chủ, bạn thử lại nhé." });
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function submit(e) {
     e.preventDefault();
@@ -75,21 +114,30 @@ export default function SendPage() {
 
   let card;
   if (!me) card = <p className="muted">Đang tải…</p>;
+  else if (me.error) {
+    card = (
+      <div className="stack">
+        {me.user && <span className="user-pill">{me.user} <button type="button" onClick={() => signOut({ callbackUrl: "/gui" })}>Đăng xuất</button></span>}
+        <Result r={{ type: "bad", title: "Chưa tải được dữ liệu", text: me.error }} />
+        <button className="btn" type="button" onClick={() => { setMe(null); loadMe(); }}>Thử lại</button>
+      </div>
+    );
+  }
   else if (!me.user) {
     card = (
       <div className="ms-login">
         <div className="seal"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3C6E2E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg></div>
         <div>
           <b style={{ fontSize: 17 }}>Đăng nhập để gửi lời chúc</b>
-          <p className="muted small" style={{ margin: "6px 0 0", maxWidth: "40ch" }}>Dùng tài khoản SLINK PTIT của sinh viên. Tài khoản chỉ dùng để giới hạn số lần gửi, không hiển thị ra ngoài.</p>
+          <p className="muted small" style={{ margin: "6px 0 0", maxWidth: "40ch" }}>Dùng tài khoản {me.ssoName || "SLINK PTIT"}. Tài khoản chỉ dùng để giới hạn số lần gửi, không hiển thị ra ngoài.</p>
         </div>
         {result && <div style={{ width: "100%" }}><Result r={result} /></div>}
-        {me.sso && <button className="btn" type="button" onClick={() => signIn("ptit", { callbackUrl: "/gui" })}>Đăng nhập bằng SLINK PTIT</button>}
+        {me.sso && <button className="btn" type="button" disabled={busy} onClick={() => login("ptit")}>{busy ? "Đang chuyển tới SSO…" : `Đăng nhập bằng ${me.ssoName || "SLINK PTIT"}`}</button>}
         {!me.sso && !me.devLogin && <p className="small muted">Chưa cấu hình đăng nhập SSO.</p>}
         {me.devLogin && (
-          <form className="row" style={{ justifyContent: "center" }} onSubmit={(e) => { e.preventDefault(); signIn("dev", { email: devEmail, callbackUrl: "/gui" }); }}>
+          <form className="row" style={{ justifyContent: "center" }} onSubmit={(e) => { e.preventDefault(); login("dev", { email: devEmail }); }}>
             <input className="field" id="devEmail" type="email" required placeholder="email sinh viên (đăng nhập thử)" value={devEmail} onChange={(e) => setDevEmail(e.target.value)} style={{ width: 260 }} />
-            <button className="btn ghost" type="submit">Đăng nhập thử</button>
+            <button className="btn ghost" type="submit" disabled={busy}>Đăng nhập thử</button>
           </form>
         )}
       </div>
@@ -134,7 +182,7 @@ export default function SendPage() {
         )}
         <div>
           <label className="lbl" htmlFor="wishText">Lời chúc</label>
-          <textarea className="field" id="wishText" maxLength={300} placeholder="Viết vài dòng thật lòng gửi thầy cô…" value={text} onChange={(e) => setText(e.target.value)} />
+          <textarea className="field" id="wishText" maxLength={300} placeholder="Chúc thầy cô luôn mạnh khỏe, hạnh phúc…" value={text} onChange={(e) => setText(e.target.value)} />
           <div className="row small muted" style={{ justifyContent: "space-between", marginTop: 6 }}><span>Hiển thị ẩn danh</span><span>{len}/300</span></div>
         </div>
         {result && <Result r={result} />}
@@ -159,6 +207,7 @@ export default function SendPage() {
           <div className="card">
             <h3 style={{ margin: "0 0 14px", fontSize: 15 }}>Quy định gửi</h3>
             <ul className="rules">
+              <li><span className="ico">♡</span><span><b>Chỉ nhận lời chúc</b> dành cho thầy cô. Lời chào, hỏi thăm hoặc cảm ơn đơn thuần sẽ không được duyệt.</span></li>
               <li><span className="ico">1</span><span><b>Một lời chúc chung</b> gửi tất cả thầy cô, chỉ gửi được một lần.</span></li>
               <li><span className="ico">✉</span><span><b>Mỗi thầy cô một lời riêng</b>. Bạn có thể gửi riêng nhiều thầy cô, mỗi người một lần.</span></li>
               <li><span className="ico">1′</span><span><b>Cách nhau 1 phút</b> giữa hai lần gửi.</span></li>
@@ -168,7 +217,7 @@ export default function SendPage() {
           </div>
           <div className="card">
             <h3 style={{ margin: "0 0 6px", fontSize: 15 }}>Lượt gửi của bạn</h3>
-            {me?.user ? (
+            {me?.user && !me.error ? (
               <>
                 <div className="progress"><span>Lời chúc chung</span><b>{me.sentGeneral ? "Đã gửi" : "Còn 1 lượt"}</b></div>
                 <div className="progress"><span>Lời chúc riêng</span><b>{sentTo.size}/{teachers.length} thầy cô</b></div>
@@ -176,7 +225,7 @@ export default function SendPage() {
                   <div className="progress" key={t.id}><span className="muted">· {t.name}</span><span className="muted">✓</span></div>
                 ))}
               </>
-            ) : <p className="small muted" style={{ margin: 0 }}>Đăng nhập để xem lượt gửi còn lại.</p>}
+            ) : <p className="small muted" style={{ margin: 0 }}>{me?.error ? "Chưa tải được lượt gửi. Vui lòng thử lại." : "Đăng nhập để xem lượt gửi còn lại."}</p>}
           </div>
         </aside>
       </div>
@@ -188,5 +237,5 @@ function Result({ r }) {
   if (r.type === "checking") return <div className="result wait" role="status"><span className="spinner" /><span><b>Đang đọc lời chúc của bạn…</b>AI kiểm duyệt thường mất vài giây.</span></div>;
   if (r.type === "ok") return <div className="result ok" role="status"><span>✓</span><span><b>Lời chúc đã lên tường!</b>{r.text}</span></div>;
   if (r.type === "wait") return <div className="result wait" role="status"><span>◷</span><span><b>Lời chúc đang chờ duyệt</b>{r.text}</span></div>;
-  return <div className="result bad" role="alert"><span>!</span><span><b>Lời chúc chưa được gửi</b>{r.text}</span></div>;
+  return <div className="result bad" role="alert"><span>!</span><span><b>{r.title || "Lời chúc chưa được gửi"}</b>{r.text}</span></div>;
 }

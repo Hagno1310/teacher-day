@@ -5,7 +5,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test": "node --test lib/moderation.test.mjs"
+    "test": "node --test lib/moderation.test.mjs lib/student-email.test.mjs lib/gemini.test.mjs",
+    "check:gemini": "node scripts/check-gemini.mjs"
   },
   "dependencies": {
     "next": "15.5.29",
