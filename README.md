@@ -13,6 +13,10 @@ Web chạy ở `http://<server>:3000`.
 
 Trước lần chạy đầu, điền danh sách thầy cô vào `data/teachers.txt`, mỗi dòng một tên. File này chỉ được nạp khi bảng thầy cô còn trống.
 
+Khi cổng gửi đang mở, truy cập trang chủ `/` sẽ vào `/gui` nếu tường có dưới 5 lời chúc đã duyệt, hoặc khách chưa đăng nhập / chưa gửi lời chúc nào hợp lệ. Lời đang chờ duyệt vẫn được tính là đã gửi; lời bị từ chối không tính. Khi tường có từ 5 lời chúc và người xem đã gửi ít nhất một lời, trang chủ mở tường như bình thường.
+
+Nút **Tường lời chúc** dẫn tới `/?wall=1` để luôn xem tường và hiệu ứng mở thư theo lựa chọn của người xem. Khi cổng gửi đóng, trang chủ mặc định cũng mở tường.
+
 ## Cấu hình (.env)
 
 | Biến | Ý nghĩa |

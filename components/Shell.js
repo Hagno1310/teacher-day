@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 
 const VIEW = { "/": "tuong", "/gui": "gui", "/thay-co": "thay-co", "/admin": "admin" };
 const NAV = [
-  ["/", "Tường lời chúc"],
+  ["/?wall=1", "Tường lời chúc"],
   ["/thay-co", "Dành cho thầy cô"],
 ];
 
@@ -46,9 +46,9 @@ export default function Shell({ children }) {
           </Link>
           <nav className="nav" aria-label="Điều hướng">
             {NAV.map(([href, label]) => (
-              <Link key={href} href={href} aria-current={path === href ? "page" : undefined}>
+              <Link key={href} href={href} aria-current={path === href.split("?")[0] ? "page" : undefined}>
                 {label}
-                {href === "/" && count !== null && <span className="badge" aria-label={`${count} lời chúc`}>{count}</span>}
+                {href.split("?")[0] === "/" && count !== null && <span className="badge" aria-label={`${count} lời chúc`}>{count}</span>}
               </Link>
             ))}
             {open && <Link href="/gui" className="cta" aria-current={path === "/gui" ? "page" : undefined}>Gửi lời chúc</Link>}
