@@ -1,31 +1,21 @@
 "use client";
 import { useEffect, useRef } from "react";
 import { Engrave } from "@/lib/art";
+import { createPaperPlane } from "@/lib/paperPlane";
 
 const LINES = [
   { size: 150, y: 140, d: 1100, text: "20/11", bold: true },
   { size: 54, y: 236, d: 1500, text: "Kính chúc quý thầy cô luôn mạnh khỏe," },
   { size: 54, y: 310, d: 1600, text: "hạnh phúc và vững bước trên bục giảng." },
 ];
+// Giả ngẫu nhiên theo chỉ số (không dùng Math.random): server và client phải ra cùng style, nếu không sẽ lỗi hydration
+const rnd = (n) => ((Math.imul(n + 1, 2654435761) >>> 0) % 1000) / 1000;
 const BURST = Array.from({ length: 14 }, (_, i) => {
-  const a = (i / 14) * Math.PI * 2 + Math.random() * 0.4, r = 70 + Math.random() * 90;
-  return { "--x": `${Math.cos(a) * r}px`, "--y": `${Math.sin(a) * r - 30}px`, "--a": `${Math.random() * 360}deg`, "--c": ["#7B1E2B", "#9A2E3C", "#5A1420", "#B5525F"][i % 4] };
+  const a = (i / 14) * Math.PI * 2 + rnd(i) * 0.4, r = 70 + rnd(i + 50) * 90;
+  return { "--x": `${(Math.cos(a) * r).toFixed(1)}px`, "--y": `${(Math.sin(a) * r - 30).toFixed(1)}px`, "--a": `${Math.round(rnd(i + 99) * 360)}deg`, "--c": ["#7B1E2B", "#9A2E3C", "#5A1420", "#B5525F"][i % 4] };
 });
 const AUTO_OPEN = 9000; // không ai bấm (máy chiếu) thì tự mở, khi đó không có nhạc vì trình duyệt chặn
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-
-// Đường bay máy bay giấy: 1 đường cong Bezier liền mạch (P1 kéo lùi xuống = lấy đà), lấy mẫu dày
-// để mỗi đoạn là tuyến tính, còn easing đặt cho cả hành trình → không bị khựng giữa các keyframe.
-function flightFrames(W, H) {
-  const P = [[0, 0], [-0.16 * W, 0.16 * H], [0.32 * W, -0.05 * H], [0.78 * W, -0.9 * H]];
-  const pt = (t, k) => (1 - t) ** 3 * P[0][k] + 3 * (1 - t) ** 2 * t * P[1][k] + 3 * (1 - t) * t * t * P[2][k] + t ** 3 * P[3][k];
-  // Không xoay theo tiếp tuyến (đoạn lấy đà đi lùi sẽ làm máy bay lật ngược): ngóc mũi nhẹ khi lùi, rồi nghiêng dần theo hướng bay
-  const ss = (x) => x * x * (3 - 2 * x);
-  return Array.from({ length: 41 }, (_, i) => {
-    const t = i / 40, a = t < 0.2 ? -6 * ss(t / 0.2) : -6 + 20 * ss((t - 0.2) / 0.8);
-    return { transform: `translate(${pt(t, 0)}px,${pt(t, 1)}px) rotate(${a}deg) scale(${1 - 0.55 * t})` };
-  });
-}
 
 /**
  * Màn mở đầu: phong thư niêm sáp → bấm con dấu → thư bật nắp, lá thư trượt ra, chữ viết tay hiện dần
@@ -80,12 +70,35 @@ export default function Intro({ onDone, onReveal }) {
     if (s.cancelled) return; add("rise"); await wait(750);
     if (s.cancelled) return; add("out");  await wait(650);
     if (s.cancelled) return; await write();
-    if (s.cancelled) return; sig.current.classList.add("show"); await wait(1700);
-    if (s.cancelled) return; add("fold"); await wait(900);
+    if (s.cancelled) return; sig.current.classList.add("show"); await wait(1000);
     if (s.cancelled) return;
-    add("fly"); document.body.classList.remove("intro-hold"); onReveal?.();
-    plane.current.animate(flightFrames(innerWidth, innerHeight), { duration: 1700, easing: "cubic-bezier(.45,0,.4,1)", fill: "forwards" });
-    await wait(1250);
+    // Lá thư sắp được thay bằng tờ giấy 3D (Three.js) cùng hình dạng, rồi chính tờ giấy đó gấp thành máy bay và bay đi.
+    // Dựng sẵn trong lúc chữ ký hiện (chụp chữ, nạp font, biên dịch shader); bóng đổ của lá thư DOM mờ dần cho khớp.
+    add("prep");
+    root.current.querySelector(".iphoto img").decode().catch(() => {}); // giải mã ảnh tập thể từ trước, tránh giật lúc ảnh hiện
+    const ready = createPaperPlane(root.current, root.current.querySelector(".letter")).catch(() => null);
+    await wait(700);
+    const p = await ready;
+    if (s.cancelled) { p?.dispose(); return; }
+    if (!p) return finish(); // không có WebGL hoặc không chụp được chữ
+    plane.current = p;
+    p.show(); add("folding"); // cùng một khung hình: hiện tờ giấy 3D, ẩn lá thư DOM
+    await plane.current.fold(() => !s.cancelled);
+    if (s.cancelled) return;
+    add("fly");
+    await plane.current.fly(2600); // bay thẳng, nhanh dần, xa dần rồi tan vào nền
+    if (s.cancelled) return;
+    // Ảnh tập thể nở ra từ đúng chấm máy bay vừa biến mất, dừng một nhịp rồi cả màn mở đầu mờ vào tường lời chúc
+    const { x, y } = plane.current.pos, ph = root.current.querySelector(".iphoto");
+    ph.style.setProperty("--fx", `${x - innerWidth / 2}px`); ph.style.setProperty("--fy", `${y - innerHeight / 2}px`);
+    ph.getBoundingClientRect(); // áp vị trí xuất phát trước khi chuyển cảnh
+    ph.style.removeProperty("--fx"); ph.style.removeProperty("--fy"); // style inline thắng CSS, nên gỡ ra để ảnh về giữa
+    add("photo");
+    await wait(1100);
+    if (s.cancelled) return;
+    // Lộ tường lời chúc khi ảnh đã nằm yên: dựng tường (React + DOM) lúc máy bay đang bay hay ảnh đang nở làm rơi khung hình
+    document.body.classList.remove("intro-hold"); onReveal?.();
+    await wait(1500);
     finish();
   };
 
@@ -101,7 +114,7 @@ export default function Intro({ onDone, onReveal }) {
     }
     const t = setTimeout(() => open(false), AUTO_OPEN);
     seal.current?.focus({ preventScroll: true });
-    return () => { clearTimeout(t); s.cancelled = true; document.body.classList.remove("intro-on", "intro-hold"); };
+    return () => { clearTimeout(t); s.cancelled = true; plane.current?.dispose(); document.body.classList.remove("intro-on", "intro-hold"); };
   }, []);
 
   return (
@@ -141,10 +154,11 @@ export default function Intro({ onDone, onReveal }) {
           <path d="M70 22c10-5 20 5 30 0s20-5 30 0 M70 35c10-5 20 5 30 0s20-5 30 0 M70 48c10-5 20 5 30 0s20-5 30 0" />
         </svg>
         <p className="env-to ep" aria-hidden="true">Kính gửi quý thầy cô</p>
-        <div className="flap ep" />
-        <button ref={seal} className="seal" type="button" aria-label="Mở thư" onClick={() => open(true)}>
-          <span className="seal-mark" aria-hidden="true">20/11</span>
-        </button>
+        <div className="flap ep">
+          <button ref={seal} className="seal" type="button" aria-label="Mở thư" onClick={() => open(true)}>
+            <span className="seal-mark" aria-hidden="true">20/11</span>
+          </button>
+        </div>
         <div className="burst" aria-hidden="true">{BURST.map((s, i) => <i key={i} style={s} />)}</div>
         <div className="ihint">
           <p className="ih-t">Một lá thư từ sinh viên</p>
@@ -152,10 +166,11 @@ export default function Intro({ onDone, onReveal }) {
         </div>
       </div>
 
-      <svg className="iplane" ref={plane} viewBox="96 14 64 52" aria-hidden="true">
-        <path d="M100 44L156 18L122 62L114 50Z" fill="#FBF9F2" stroke="#1E3A2F" strokeWidth="1.8" strokeLinejoin="round" />
-        <path d="M114 50L156 18M114 50L112 62L122 62" fill="none" stroke="#1E3A2F" strokeWidth="1.4" strokeLinejoin="round" />
-      </svg>
+
+      <figure className="iphoto">
+        <img src="/images/anh-tap-the.jpg" alt="Ảnh tập thể thầy cô Học viện" width="2177" height="1229" />
+        <figcaption>Tri ân quý thầy cô</figcaption>
+      </figure>
 
       <p className="sr-only">20/11. Kính chúc quý thầy cô luôn mạnh khỏe, hạnh phúc và vững bước trên bục giảng. Trân trọng, các thế hệ sinh viên.</p>
       <button className="skip" type="button" onClick={finish}>Bỏ qua</button>

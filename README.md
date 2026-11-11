@@ -17,7 +17,7 @@ Trước lần chạy đầu, điền danh sách thầy cô vào `data/teachers.
 
 | Biến | Ý nghĩa |
 |---|---|
-| `AZURE_AD_CLIENT_ID/SECRET/TENANT_ID` | SSO Outlook. Redirect URI cần đăng ký: `{NEXTAUTH_URL}/api/auth/callback/azure-ad` |
+| `PTIT_SSO`, `PTIT_SSO_ISSUER`, `PTIT_SSO_CLIENT_ID` | SSO sinh viên PTIT (SLINK PTIT, Keycloak). Mặc định đã đúng hạ tầng PTIT. Keycloak phải cho phép redirect URI `{NEXTAUTH_URL}/api/auth/callback/ptit` |
 | `STUDENT_EMAIL_DOMAINS` | Chỉ cho các đuôi email này đăng nhập gửi lời chúc |
 | `AUTH_DEV_LOGIN` | `true` = cho đăng nhập thử bằng email bất kỳ. **Đặt `false` khi chạy thật** |
 | `GEMINI_API_KEYS` | Nhiều key, ngăn cách bằng dấu phẩy. Hết quota thì tự chuyển key; hết sạch thì lời chúc chờ duyệt và được thử lại mỗi 5 phút |

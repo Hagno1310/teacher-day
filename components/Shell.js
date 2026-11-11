@@ -13,6 +13,7 @@ export default function Shell({ children }) {
   const path = usePathname();
   const hdr = useRef(null);
   const [count, setCount] = useState(null);
+  const [open, setOpen] = useState(true); // cổng gửi còn mở? (theo OPEN_AT/CLOSE_AT ở server). Đóng thì trang chỉ để đọc
 
   useEffect(() => { document.body.dataset.view = VIEW[path] || "tuong"; }, [path]);
 
@@ -25,7 +26,10 @@ export default function Shell({ children }) {
   }, []);
 
   useEffect(() => {
-    const load = () => fetch("/api/wishes").then((r) => r.json()).then((d) => setCount(d.length)).catch(() => {});
+    const load = () => {
+      fetch("/api/wishes").then((r) => r.json()).then((d) => setCount(d.length)).catch(() => {});
+      fetch("/api/me").then((r) => r.json()).then((d) => setOpen(d.window?.open !== false)).catch(() => {});
+    };
     load();
     const t = setInterval(load, 30_000);
     return () => clearInterval(t);
@@ -47,7 +51,7 @@ export default function Shell({ children }) {
                 {href === "/" && count !== null && <span className="badge" aria-label={`${count} lời chúc`}>{count}</span>}
               </Link>
             ))}
-            <Link href="/gui" className="cta" aria-current={path === "/gui" ? "page" : undefined}>Gửi lời chúc</Link>
+            {open && <Link href="/gui" className="cta" aria-current={path === "/gui" ? "page" : undefined}>Gửi lời chúc</Link>}
           </nav>
         </div>
       </header>

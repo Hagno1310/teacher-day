@@ -4,20 +4,22 @@ import Link from "next/link";
 import Intro from "@/components/Intro";
 import Wall from "@/components/Wall";
 
-// Trước 20/11 (giờ VN) mới mời gửi; từ 20/11 trở đi tường chỉ để xem
-const beforeTeachersDay = () => { const vn = new Date(Date.now() + 7 * 3600e3); return vn.getUTCMonth() < 10 || (vn.getUTCMonth() === 10 && vn.getUTCDate() < 20); };
-
 function InviteDialog({ active }) {
   const ref = useRef(null);
   useEffect(() => {
-    if (!active || !beforeTeachersDay()) return;
+    if (!active) return;
     try { if (sessionStorage.getItem("invite-seen")) return; } catch {}
-    const t = setTimeout(() => {
-      if (document.body.classList.contains("presenting")) return;
-      ref.current?.showModal();
-      try { sessionStorage.setItem("invite-seen", "1"); } catch {}
-    }, 5000);
-    return () => clearTimeout(t);
+    // Chỉ mời gửi khi cổng còn mở (OPEN_AT/CLOSE_AT ở server); đã đóng thì tường chỉ để đọc
+    let t, gone = false;
+    fetch("/api/me").then((r) => r.json()).then((d) => {
+      if (gone || !d.window?.open) return;
+      t = setTimeout(() => {
+        if (document.body.classList.contains("presenting")) return;
+        ref.current?.showModal();
+        try { sessionStorage.setItem("invite-seen", "1"); } catch {}
+      }, 5000);
+    }).catch(() => {});
+    return () => { gone = true; clearTimeout(t); };
   }, [active]);
   const close = () => ref.current?.close();
   return (

@@ -84,7 +84,7 @@ export default function SendPage() {
           <p className="muted small" style={{ margin: "6px 0 0", maxWidth: "40ch" }}>Dùng tài khoản Outlook sinh viên của trường. Tài khoản chỉ dùng để giới hạn số lần gửi, không hiển thị ra ngoài.</p>
         </div>
         {result && <div style={{ width: "100%" }}><Result r={result} /></div>}
-        {me.sso && <button className="btn" type="button" onClick={() => signIn("azure-ad", { callbackUrl: "/gui" })}>Đăng nhập bằng Outlook sinh viên</button>}
+        {me.sso && <button className="btn" type="button" onClick={() => signIn("ptit", { callbackUrl: "/gui" })}>Đăng nhập bằng SLINK PTIT</button>}
         {!me.sso && !me.devLogin && <p className="small muted">Chưa cấu hình đăng nhập SSO.</p>}
         {me.devLogin && (
           <form className="row" style={{ justifyContent: "center" }} onSubmit={(e) => { e.preventDefault(); signIn("dev", { email: devEmail, callbackUrl: "/gui" }); }}>
