@@ -8,21 +8,22 @@ import { sql, db } from "../lib/db.js";
 const DOMAIN = "seed.local";
 const N_STUDENTS = 40;
 
+// Lời chúc chung chung: danh sách có cả cán bộ, nhân viên chứ không chỉ giảng viên, nên tránh nhắc bài giảng, đồ án...
 const GENERAL = [
-  "Chúc thầy cô luôn mạnh khỏe, hạnh phúc và mãi giữ ngọn lửa yêu nghề.",
-  "Cảm ơn thầy cô đã kiên nhẫn với chúng em qua từng bài giảng. Chúc thầy cô 20/11 thật ý nghĩa!",
-  "Nhân ngày Nhà giáo Việt Nam, em kính chúc thầy cô dồi dào sức khỏe và thành công.",
-  "Những điều thầy cô dạy không chỉ nằm trong giáo trình. Em biết ơn thầy cô rất nhiều.",
-  "Chúc các thầy cô một mùa hoa sữa thật đẹp, nhiều niềm vui bên học trò.",
-  "Mong thầy cô luôn bình an, vui vẻ, và có thật nhiều thế hệ sinh viên giỏi giang.",
+  "Chúc thầy cô luôn mạnh khỏe, hạnh phúc và tràn đầy niềm vui.",
+  "Nhân ngày Nhà giáo Việt Nam 20/11, em kính chúc thầy cô dồi dào sức khỏe và thành công.",
+  "Cảm ơn thầy cô đã luôn quan tâm, hỗ trợ và đồng hành cùng sinh viên chúng em.",
+  "Chúc thầy cô một mùa 20/11 thật ấm áp, bình an và nhiều niềm vui.",
+  "Mong thầy cô luôn khỏe mạnh, vui vẻ và giữ mãi nhiệt huyết với nghề.",
+  "Em biết ơn thầy cô rất nhiều. Chúc thầy cô mọi điều tốt đẹp nhất!",
 ];
 const PERSONAL = [
-  "Em cảm ơn thầy/cô vì những buổi học tận tâm. Chúc thầy/cô luôn khỏe và vui!",
-  "Nhờ thầy/cô mà em thích môn học này hơn rất nhiều. Chúc thầy/cô 20/11 an lành.",
-  "Em vẫn nhớ lời khuyên của thầy/cô hôm bảo vệ đồ án. Em cảm ơn thầy/cô ạ!",
-  "Chúc thầy/cô luôn giữ được nụ cười trên bục giảng. Em biết ơn thầy/cô nhiều.",
-  "Cảm ơn thầy/cô đã luôn sẵn lòng trả lời câu hỏi của em, kể cả lúc nửa đêm.",
-  "Kính chúc thầy/cô sức khỏe, hạnh phúc và thật nhiều niềm vui trong sự nghiệp.",
+  "Em cảm ơn thầy/cô đã luôn tận tình giúp đỡ chúng em. Chúc thầy/cô luôn khỏe và vui!",
+  "Chúc thầy/cô 20/11 thật ý nghĩa, gia đình hạnh phúc và công việc thuận lợi.",
+  "Cảm ơn thầy/cô vì sự quan tâm và những lời động viên dành cho em. Em biết ơn thầy/cô nhiều.",
+  "Kính chúc thầy/cô sức khỏe dồi dào, luôn bình an và tràn đầy niềm vui.",
+  "Nhân ngày 20/11, em gửi lời tri ân tới thầy/cô. Chúc thầy/cô luôn giữ nụ cười thật tươi!",
+  "Cảm ơn thầy/cô đã luôn sẵn lòng hỗ trợ sinh viên. Chúc thầy/cô mọi điều tốt đẹp.",
 ];
 const REJECTED = ["asdfgh qwerty", "Môn này chán quá", "spam spam spam"];
 

@@ -18,7 +18,7 @@ export async function GET(req) {
 
 export async function POST(req) {
   const email = await studentEmail();
-  if (!email) return Response.json({ error: "Bạn cần đăng nhập bằng tài khoản Outlook sinh viên." }, { status: 401 });
+  if (!email) return Response.json({ error: "Bạn cần đăng nhập bằng tài khoản SLINK PTIT." }, { status: 401 });
   const body = await req.json().catch(() => ({}));
   const { code, ...rest } = await submitWish(email, body.text, body.teacherId ?? null);
   return Response.json(rest, { status: code });

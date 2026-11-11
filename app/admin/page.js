@@ -37,10 +37,12 @@ export default function AdminPage() {
   if (authed === null) return <div className="page"><p className="muted">Đang tải…</p></div>;
   if (!authed) {
     return (
-      <div className="page">
-        <h1>Quản trị</h1>
-        <p className="lede">Khu vực dành cho ban tổ chức.</p>
-        <form className="card stack" onSubmit={login} style={{ maxWidth: 380 }}>
+      <div className="page admin-login">
+        <form className="card stack login-card" onSubmit={login}>
+          <div className="login-head">
+            <svg viewBox="-22 -22 44 44" aria-hidden="true"><use href="#s-seal" x="-22" y="-22" width="44" height="44" /></svg>
+            <div><h1>Quản trị</h1><p className="lede">Khu vực dành cho ban tổ chức.</p></div>
+          </div>
           <div><label className="lbl" htmlFor="adminPw">Mật khẩu quản trị</label><input className="field" id="adminPw" type="password" autoComplete="current-password" value={pw} onChange={(e) => setPw(e.target.value)} /></div>
           {err && <div className="result bad" role="alert"><span>!</span><span>{err}</span></div>}
           <button className="btn" type="submit">Vào trang quản trị</button>
@@ -61,13 +63,13 @@ export default function AdminPage() {
       </div>
       {stats && (
         <div className="tiles">
-          {["approved", "rejected", "pending", "hidden"].map((k) => <div className="tile" key={k}><small>{ST[k]}</small><b>{stats[k]}</b></div>)}
+          {["approved", "rejected", "pending", "hidden"].map((k) => <div className={`tile ${k}`} key={k}><small>{ST[k]}</small><b>{stats[k]}</b></div>)}
         </div>
       )}
       {stats && <p className="small muted" style={{ marginTop: -8 }}>{stats.students} sinh viên đã gửi lời chúc.</p>}
       <div className="filters">
         {["all", "approved", "rejected", "pending", "hidden"].map((k) => (
-          <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>{k === "all" ? "Tất cả" : ST[k]}</button>
+          <button key={k} type="button" aria-pressed={filter === k} onClick={() => setFilter(k)}>{k === "all" ? "Tất cả" : ST[k]}{stats && k !== "all" && <span className="cnt">{stats[k]}</span>}</button>
         ))}
       </div>
       <div className="table-wrap">
@@ -78,14 +80,14 @@ export default function AdminPage() {
               <tr key={m.id}>
                 <td className="num">{fmt(m.createdAt)}</td>
                 <td>{m.teacherName || "Tất cả thầy cô"}</td>
-                <td className="msg">{m.text}{m.reason && <div className="small" style={{ color: "var(--warn)", fontFamily: "var(--body)", marginTop: 4 }}>{m.reason}</div>}</td>
+                <td className="msg">{m.text}{m.reason && <span className="why">{m.reason}</span>}</td>
                 <td><span className={`pill ${m.status}`}>{ST[m.status]}</span></td>
-                <td className="small muted">{m.studentEmail}</td>
-                <td>
-                  {m.status === "pending" && <button className="linkbtn" type="button" onClick={() => setStatus(m.id, "approved")}>Duyệt</button>}
-                  {(m.status === "approved" || m.status === "pending") && <button className="linkbtn" type="button" onClick={() => setStatus(m.id, "hidden")}>Ẩn</button>}
-                  {m.status === "hidden" && <button className="linkbtn" type="button" onClick={() => setStatus(m.id, "approved")}>Hiện lại</button>}
-                </td>
+                <td className="small muted sender">{m.studentEmail}</td>
+                <td className="acts"><div className="acts-in">
+                  {m.status === "pending" && <button className="act ok" type="button" onClick={() => setStatus(m.id, "approved")}>Duyệt</button>}
+                  {(m.status === "approved" || m.status === "pending") && <button className="act" type="button" onClick={() => setStatus(m.id, "hidden")}>Ẩn</button>}
+                  {m.status === "hidden" && <button className="act" type="button" onClick={() => setStatus(m.id, "approved")}>Hiện lại</button>}
+                </div></td>
               </tr>
             )) : <tr><td colSpan={6} className="muted">Không có lời chúc ở mục này.</td></tr>}
           </tbody>

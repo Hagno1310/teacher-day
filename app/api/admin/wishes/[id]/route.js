@@ -9,6 +9,7 @@ export async function PATCH(req, { params }) {
   const { id } = await params;
   const { status } = await req.json().catch(() => ({}));
   if (!["hidden", "approved"].includes(status)) return Response.json({ error: "status phải là hidden hoặc approved" }, { status: 400 });
-  const [row] = await sql`UPDATE wishes SET status = ${status}, moderated_at = COALESCE(moderated_at, now()) WHERE id = ${Number(id)} AND status IN ('approved','hidden','pending') RETURNING id, status`;
+  const [row] = await sql`UPDATE wishes SET status = ${status}, moderated_at = COALESCE(moderated_at, now()),
+      reason = CASE WHEN status = 'pending' THEN NULL ELSE reason END WHERE id = ${Number(id)} AND status IN ('approved','hidden','pending') RETURNING id, status`;
   return row ? Response.json(row) : Response.json({ error: "Không tìm thấy lời chúc có thể duyệt/ẩn/hiện." }, { status: 404 });
 }

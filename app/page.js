@@ -35,9 +35,13 @@ function InviteDialog({ active }) {
   );
 }
 
+// Đã xem màn mở đầu trong lần mở web này chưa. Biến module nên còn nguyên khi chuyển qua lại giữa các tab trong web
+// (bấm "Tường lời chúc" không chiếu lại mở đầu), nhưng tải lại trang thì xem lại từ đầu.
+let introSeen = false;
+
 export default function Home() {
-  const [intro, setIntro] = useState(true);
-  const [reveal, setReveal] = useState(false);
+  const [intro, setIntro] = useState(() => !introSeen);
+  const [reveal, setReveal] = useState(() => introSeen);
   const [presenting, setPresenting] = useState(false);
 
   useEffect(() => {
@@ -55,7 +59,7 @@ export default function Home() {
 
   return (
     <section aria-label="Tường lời chúc">
-      {intro && <Intro onDone={() => setIntro(false)} onReveal={() => setReveal(true)} />}
+      {intro && <Intro onDone={() => setIntro(false)} onReveal={() => { introSeen = true; setReveal(true); }} />}
       <Wall active={!intro || reveal} />
       <InviteDialog active={!intro} />
       <div className="dock">

@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 // ponytail: bài piano chậm tự soạn, tổng hợp bằng Web Audio (không cần file, không vướng bản quyền).
 // Piano = vài họa âm sine hơi lệch (inharmonic), họa âm cao tắt nhanh hơn. Muốn dùng mp3 thật: thay engine bằng <audio>.
@@ -108,6 +109,9 @@ function createEngine() {
 }
 
 export default function Vinyl() {
+  const admin = usePathname()?.startsWith("/admin"); // trang quản trị: không phát nhạc
+  const adminRef = useRef(admin);
+  adminRef.current = admin;
   const eng = useRef(null);
   const userOff = useRef(false);
   const [on, setOn] = useState(false);
@@ -115,16 +119,19 @@ export default function Vinyl() {
 
   const playing = useRef(false);
   const start = () => {
-    if (playing.current) return;
+    if (playing.current || adminRef.current) return;
     eng.current ??= createEngine();
     if (!eng.current) return;
     playing.current = true; eng.current.start(); setOn(true);
   };
   const stop = () => { playing.current = false; eng.current?.stop(); setOn(false); };
 
+  useEffect(() => { if (admin && playing.current) stop(); }, [admin]); // vào trang quản trị khi nhạc đang phát thì tắt
+
   useEffect(() => {
     // Trình duyệt chỉ cho phát âm thanh sau thao tác đầu tiên của người xem
     const first = (e) => {
+      if (adminRef.current) return; // ở trang quản trị: chưa phát, giữ lại để lần bấm đầu ở trang khác vẫn bật nhạc
       if (!e.target.closest?.(".vinyl") && !userOff.current) start();
       removeEventListener("pointerdown", first);
     };
