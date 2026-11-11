@@ -24,28 +24,29 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 export default function Intro({ onDone, onReveal }) {
   const root = useRef(null), svg = useRef(null), pen = useRef(null), sig = useRef(null), seal = useRef(null), plane = useRef(null);
   const st = useRef({ opened: false, done: false, cancelled: false });
+  const finishTimer = useRef(null);
 
   const add = (c) => root.current?.classList.add(c);
   const finish = () => {
     const s = st.current;
-    if (s.done) return;
+    if (s.done || s.cancelled) return;
     s.done = true; s.cancelled = true;
     onReveal?.();
     add("gone");
     document.body.classList.remove("intro-on", "intro-hold");
-    setTimeout(onDone, 900);
+    finishTimer.current = setTimeout(onDone, 900);
   };
 
-  const write = async () => {
+  const write = async (s) => {
     const masks = [...svg.current.querySelectorAll("mask rect.m")], feathers = [...svg.current.querySelectorAll("mask rect.f")];
     const texts = [...svg.current.querySelectorAll("text")];
-    for (let i = 0; i < LINES.length && !st.current.cancelled; i++) {
+    for (let i = 0; i < LINES.length && !s.cancelled; i++) {
       const b = texts[i].getBBox(), m = masks[i], f = feathers[i], d = LINES[i].d, t0 = performance.now();
       m.setAttribute("x", b.x - 10); f.setAttribute("opacity", 1);
       pen.current.setAttribute("opacity", 1);
       await new Promise((res) => {
         const step = (t) => {
-          if (st.current.cancelled) return res();
+          if (s.cancelled) return res();
           const p = Math.min(1, (t - t0) / d), e = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
           const w = (b.width + 20) * e;
           m.setAttribute("width", w); f.setAttribute("x", b.x - 10 + w);
@@ -62,14 +63,14 @@ export default function Intro({ onDone, onReveal }) {
 
   const open = async (byUser) => {
     const s = st.current;
-    if (s.opened || s.done) return;
+    if (s.opened || s.done || s.cancelled) return;
     s.opened = true;
     if (byUser) dispatchEvent(new Event("vinyl:play")); // kim đặt xuống đĩa đúng lúc mở thư
     // Các nhịp gối lên nhau (nắp chưa mở hết thì thư đã nhô lên) để không có khoảng chết
     add("open");                      await wait(450);
     if (s.cancelled) return; add("rise"); await wait(750);
     if (s.cancelled) return; add("out");  await wait(650);
-    if (s.cancelled) return; await write();
+    if (s.cancelled) return; await write(s);
     if (s.cancelled) return; sig.current.classList.add("show"); await wait(1000);
     if (s.cancelled) return;
     // Lá thư sắp được thay bằng tờ giấy 3D (Three.js) cùng hình dạng, rồi chính tờ giấy đó gấp thành máy bay và bay đi.
@@ -103,18 +104,27 @@ export default function Intro({ onDone, onReveal }) {
   };
 
   useEffect(() => {
-    const s = st.current;
+    // Strict Mode chạy setup → cleanup → setup trên cùng ref: mỗi lượt cần trạng thái mới.
+    const s = { opened: false, done: false, cancelled: false };
+    st.current = s;
     document.body.classList.add("intro-on", "intro-hold");
+    let timer;
     if (matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      s.opened = true;
       ["open", "rise", "out"].forEach(add);
       svg.current.querySelectorAll("mask rect.m").forEach((r) => r.setAttribute("width", 1000));
       sig.current.classList.add("show");
-      const t = setTimeout(finish, 4000);
-      return () => { clearTimeout(t); document.body.classList.remove("intro-on", "intro-hold"); };
+      timer = setTimeout(finish, 4000);
+    } else {
+      timer = setTimeout(() => open(false), AUTO_OPEN);
+      seal.current?.focus({ preventScroll: true });
     }
-    const t = setTimeout(() => open(false), AUTO_OPEN);
-    seal.current?.focus({ preventScroll: true });
-    return () => { clearTimeout(t); s.cancelled = true; plane.current?.dispose(); document.body.classList.remove("intro-on", "intro-hold"); };
+    return () => {
+      clearTimeout(timer); clearTimeout(finishTimer.current);
+      s.cancelled = true;
+      plane.current?.dispose(); plane.current = null;
+      document.body.classList.remove("intro-on", "intro-hold");
+    };
   }, []);
 
   return (

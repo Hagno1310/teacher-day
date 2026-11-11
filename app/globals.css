@@ -320,29 +320,64 @@ details.demo summary{cursor:pointer;font-weight:600;color:#7A5E12}
 details.demo .row{margin-top:10px}
 
 /* ---------- Teachers ---------- */
-.tc-layout{display:grid;grid-template-columns:300px minmax(0,1fr);gap:20px;align-items:start}
-@media (max-width:860px){.tc-layout{grid-template-columns:minmax(0,1fr)}}
-.tc-list{max-height:min(64vh,620px);overflow:auto;margin:10px -6px 0;padding:0 6px;display:flex;flex-direction:column;gap:2px}
-@media (max-width:860px){.tc-list{max-height:220px}}
-.tc-item{display:flex;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:8px;border-radius:10px;cursor:pointer;width:100%}
+body[data-view="thay-co"]{overflow:hidden}
+body[data-view="thay-co"] main{height:calc(100dvh - var(--hdr,61px));padding-bottom:0;overflow:hidden}
+.teachers-page{height:100%;box-sizing:border-box;display:flex;flex-direction:column;overflow:hidden;padding-block:24px}
+.tc-title{flex:none}
+.tc-title .lede{margin-bottom:20px}
+.tc-layout{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(0,1fr);grid-template-rows:minmax(0,1fr);gap:20px;overflow:hidden}
+.tc-sidebar{min-width:0;min-height:0;display:flex;flex-direction:column;padding:18px;overflow:hidden}
+.tc-sidebar .lbl,.tc-sidebar .field{flex:none}
+.tc-list{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;margin:12px -4px 0 0;padding:0 6px 2px 0;display:flex;flex-direction:column;gap:3px}
+.tc-content{display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}
+.tc-wishes{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:2px 8px 16px 2px}
+.tc-list,.tc-wishes,.combo-list{overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:var(--leaf-200) transparent}
+.tc-list:focus-visible,.tc-wishes:focus-visible{outline-offset:-2px}
+.tc-list::-webkit-scrollbar,.tc-wishes::-webkit-scrollbar,.combo-list::-webkit-scrollbar{width:6px}
+.tc-list::-webkit-scrollbar-track,.tc-wishes::-webkit-scrollbar-track,.combo-list::-webkit-scrollbar-track{background:transparent}
+.tc-list::-webkit-scrollbar-thumb,.tc-wishes::-webkit-scrollbar-thumb,.combo-list::-webkit-scrollbar-thumb{background:var(--leaf-200);border-radius:999px;border:1px solid transparent;background-clip:padding-box}
+.tc-list::-webkit-scrollbar-thumb:hover,.tc-wishes::-webkit-scrollbar-thumb:hover,.combo-list::-webkit-scrollbar-thumb:hover{background:var(--leaf-500)}
+.tc-item{display:flex;flex:none;align-items:center;gap:10px;border:0;background:none;text-align:left;padding:8px;border-radius:5px;cursor:pointer;width:100%;min-width:0}
 .tc-item:hover{background:var(--leaf-50)}
 .tc-item[aria-pressed="true"]{background:var(--leaf-100)}
 .ava{width:34px;height:34px;flex:none;border-radius:50%;display:grid;place-items:center;font-family:var(--serif);font-weight:600;font-size:15px;color:var(--leaf-700);
   background:var(--sheet);border:1px solid var(--leaf-200)}
 .ava.lg{width:64px;height:64px;font-size:22px}
-.tc-item .n{font-size:14px;font-weight:500}
-.tc-item .c{margin-left:auto;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
-.tc-head{display:flex;align-items:center;gap:16px;margin-bottom:16px}
-.tc-head h2{font-family:var(--serif);font-weight:600;font-size:38px;margin:0;color:var(--ink);line-height:1.05}
+.tc-item .n{min-width:0;font-size:14px;font-weight:500;overflow-wrap:anywhere}
+.tc-item .c{flex:none;margin-left:auto;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tc-head{display:flex;flex:none;align-items:center;gap:16px;margin-bottom:16px}
+.tc-head>div{min-width:0}
+.tc-head h2{font-family:var(--serif);font-weight:600;font-size:38px;margin:0;color:var(--ink);line-height:1.05;overflow-wrap:anywhere}
+.tc-content>.tabs{flex:none}
 .tabs{display:flex;gap:6px;margin-bottom:16px;flex-wrap:wrap}
 .tabs button{border:1px solid var(--line);background:var(--sheet);border-radius:4px;padding:7px 14px;cursor:pointer;font-size:13px}
 .tabs button[aria-selected="true"]{background:var(--leaf-700);color:#fff;border-color:var(--leaf-700)}
 .cards{columns:3 240px;column-gap:14px}
+.tc-wishes .cards{padding-bottom:72px}
 .note{break-inside:avoid;margin:0 0 14px;background:var(--sheet);border:1px solid var(--line);border-left:2px solid var(--leaf-700);border-radius:2px;padding:16px 18px;position:relative}
 .note.private{border-left-color:var(--wax)}
-.note p{margin:0 0 10px;font-family:var(--serif);font-weight:500;font-size:19px;line-height:1.4}
+.note p{margin:0 0 10px;font-family:var(--serif);font-weight:500;font-size:19px;line-height:1.4;overflow-wrap:anywhere}
 .note time{font-size:12px;color:var(--muted)}
 .empty{padding:40px 20px;text-align:center;color:var(--muted);border:1px dashed var(--leaf-200);border-radius:var(--r);background:var(--sheet)}
+@media (max-width:860px){
+  .teachers-page{padding-block:16px}
+  .tc-title h1{font-size:clamp(30px,5vw,42px)}
+  .tc-title .lede{font-size:13px;margin-bottom:14px}
+  .tc-layout{grid-template-columns:minmax(0,1fr);grid-template-rows:clamp(154px,28dvh,218px) minmax(0,1fr);gap:14px}
+  .tc-sidebar{padding:12px}
+  .tc-list{margin-top:8px}
+  .tc-head{gap:10px;margin-bottom:10px}
+  .tc-head .ava.lg{width:42px;height:42px;font-size:17px}
+  .tc-head h2{font-size:28px}
+  .tc-content>.tabs{margin-bottom:10px}
+  .tc-content .tabs button{padding:6px 10px;font-size:12px}
+}
+@media (max-width:860px) and (max-height:600px){
+  .teachers-page{padding-block:12px}
+  .tc-layout{display:block;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:var(--leaf-200) transparent}
+  .tc-sidebar{height:154px;box-sizing:border-box;margin-bottom:14px}
+  .tc-content{height:300px}
+}
 
 /* ---------- Admin ---------- */
 .tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
