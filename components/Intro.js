@@ -156,7 +156,7 @@ export default function Intro({ onDone, onReveal }) {
         <p className="env-to ep" aria-hidden="true">Kính gửi quý thầy cô</p>
         <div className="flap ep">
           <button ref={seal} className="seal" type="button" aria-label="Mở thư" onClick={() => open(true)}>
-            <span className="seal-mark" aria-hidden="true">20/11</span>
+            <svg viewBox="-22 -22 44 44" aria-hidden="true"><use href="#s-seal" x="-22" y="-22" width="44" height="44" /></svg>
           </button>
         </div>
         <div className="burst" aria-hidden="true">{BURST.map((s, i) => <i key={i} style={s} />)}</div>

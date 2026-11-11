@@ -82,7 +82,8 @@ export default function AdminPage() {
                 <td><span className={`pill ${m.status}`}>{ST[m.status]}</span></td>
                 <td className="small muted">{m.studentEmail}</td>
                 <td>
-                  {m.status === "approved" && <button className="linkbtn" type="button" onClick={() => setStatus(m.id, "hidden")}>Ẩn</button>}
+                  {m.status === "pending" && <button className="linkbtn" type="button" onClick={() => setStatus(m.id, "approved")}>Duyệt</button>}
+                  {(m.status === "approved" || m.status === "pending") && <button className="linkbtn" type="button" onClick={() => setStatus(m.id, "hidden")}>Ẩn</button>}
                   {m.status === "hidden" && <button className="linkbtn" type="button" onClick={() => setStatus(m.id, "approved")}>Hiện lại</button>}
                 </td>
               </tr>

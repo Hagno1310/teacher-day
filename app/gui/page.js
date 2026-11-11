@@ -64,7 +64,7 @@ export default function SendPage() {
         setText(""); setTeacherName("");
         setResult(d.status === "approved"
           ? { type: "ok", text: "Lời chúc sẽ xuất hiện trên tường trong giây lát." }
-          : { type: "wait", text: "Hệ thống kiểm duyệt đang bận. Lời chúc đã được lưu và sẽ tự lên tường khi duyệt xong." });
+          : { type: "wait", text: "Lời chúc đã được lưu và đang chờ ban tổ chức duyệt. Duyệt xong sẽ tự lên tường." });
       } else setResult({ type: "bad", text: d.error || "Có lỗi xảy ra, bạn thử lại nhé." });
     } catch {
       setResult({ type: "bad", text: "Không kết nối được máy chủ, bạn thử lại nhé." });
@@ -81,7 +81,7 @@ export default function SendPage() {
         <div className="seal"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#3C6E2E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="m3 7 9 6 9-6" /></svg></div>
         <div>
           <b style={{ fontSize: 17 }}>Đăng nhập để gửi lời chúc</b>
-          <p className="muted small" style={{ margin: "6px 0 0", maxWidth: "40ch" }}>Dùng tài khoản Outlook sinh viên của trường. Tài khoản chỉ dùng để giới hạn số lần gửi, không hiển thị ra ngoài.</p>
+          <p className="muted small" style={{ margin: "6px 0 0", maxWidth: "40ch" }}>Dùng tài khoản SLINK PTIT của sinh viên. Tài khoản chỉ dùng để giới hạn số lần gửi, không hiển thị ra ngoài.</p>
         </div>
         {result && <div style={{ width: "100%" }}><Result r={result} /></div>}
         {me.sso && <button className="btn" type="button" onClick={() => signIn("ptit", { callbackUrl: "/gui" })}>Đăng nhập bằng SLINK PTIT</button>}
@@ -142,7 +142,7 @@ export default function SendPage() {
           <button className="btn" type="submit" disabled={busy || !!cooldown || !!lock || !me.window.open}>
             {lock ? `Tạm khóa ${mmss(lock)}` : cooldown ? `Gửi tiếp sau ${mmss(cooldown)}` : busy ? "Đang gửi…" : "Gửi lời chúc"}
           </button>
-          {!!cooldown && !lock && <span className="small muted">Cần cách 3 phút giữa hai lần gửi</span>}
+          {!!cooldown && !lock && <span className="small muted">Cần cách 1 phút giữa hai lần gửi</span>}
           {!!lock && <span className="small muted">Bạn có quá nhiều lời chúc chưa được duyệt, thử lại sau ít phút</span>}
         </div>
       </form>
@@ -161,7 +161,7 @@ export default function SendPage() {
             <ul className="rules">
               <li><span className="ico">1</span><span><b>Một lời chúc chung</b> gửi tất cả thầy cô, chỉ gửi được một lần.</span></li>
               <li><span className="ico">✉</span><span><b>Mỗi thầy cô một lời riêng</b>. Bạn có thể gửi riêng nhiều thầy cô, mỗi người một lần.</span></li>
-              <li><span className="ico">3′</span><span><b>Cách nhau 3 phút</b> giữa hai lần gửi.</span></li>
+              <li><span className="ico">1′</span><span><b>Cách nhau 1 phút</b> giữa hai lần gửi.</span></li>
               <li><span className="ico">✓</span><span><b>Không mất lượt</b> nếu lời chúc chưa được duyệt. Bạn sửa lại và gửi tiếp.</span></li>
               <li><span className="ico">◌</span><span><b>Ẩn danh</b>. Tên bạn không hiện ở bất kỳ đâu trên web.</span></li>
             </ul>

@@ -16,7 +16,7 @@ export default function Wall({ active }) {
     const stage = stageRef.current;
     let on = false, bubbles = [], queue = [], pool = [], seen = new Set(), last = 0, laneFree = [];
     const small = () => innerWidth < 640;
-    const LANE_H = () => (small() ? 96 : 108);
+    const LANE_H = () => (small() ? 84 : 108); // điện thoại: thẻ nhỏ hơn nên làn thấp hơn, chứa được nhiều thẻ hơn
     const TOP = () => (small() ? 56 : 92);
     const MAX = () => (small() ? 6 : 14);
     const lanes = () => Math.max(2, Math.floor((stage.clientHeight - TOP() - 70) / LANE_H()));

@@ -131,11 +131,10 @@ body.intro-hold .stage{scale:1.06;opacity:.5}
 #intro.open .flap{transform:rotateX(180deg);z-index:1}
 #intro.out .flap{transform:translateY(80vh) rotateX(180deg);opacity:0;transition:transform 1s cubic-bezier(.55,0,.75,.2),opacity .7s ease .25s}
 
-#intro .seal{position:absolute;z-index:7;left:50%;top:100%;backface-visibility:hidden;translate:-50% -50%;width:clamp(56px,11vw,76px);aspect-ratio:1;padding:0;border:0;cursor:pointer;display:grid;place-items:center;
-  border-radius:50% 46% 52% 48%/48% 52% 47% 53%;background:radial-gradient(circle at 35% 30%,#A8434F,#7B1E2B 55%,#5A1420);
-  box-shadow:inset 0 -4px 8px rgba(0,0,0,.3),inset 0 3px 6px rgba(255,255,255,.18),0 8px 16px -6px rgba(90,20,32,.6);transition:scale .25s ease,opacity .35s ease}
-#intro .seal-mark{position:relative;font-family:var(--serif);font-weight:600;font-size:clamp(15px,2.6vw,20px);color:#E9C2B8;text-shadow:0 -1px 0 rgba(0,0,0,.45),0 1px 0 rgba(255,255,255,.15)}
-#intro .seal-mark::before{content:"";position:absolute;inset:-9px -7px;border:1px solid rgba(233,194,184,.35);border-radius:50%}
+/* Dấu sáp mở thư: dùng đúng hình dấu sáp của logo (symbol #s-seal), bóng đổ cho nổi khối */
+#intro .seal{position:absolute;z-index:7;left:50%;top:100%;backface-visibility:hidden;translate:-50% -50%;width:clamp(60px,11.5vw,82px);aspect-ratio:1;padding:0;border:0;border-radius:50%;background:none;cursor:pointer;display:grid;place-items:center;
+  filter:drop-shadow(0 7px 9px rgba(90,20,32,.45));transition:scale .25s ease,opacity .35s ease}
+#intro .seal svg{width:100%;height:100%;overflow:visible}
 #intro .seal::before{content:"";position:absolute;inset:-8px;border-radius:50%;border:1.5px solid rgba(123,30,43,.45);animation:ring 1.8s ease-out infinite}
 #intro .seal:hover{scale:1.07}
 #intro .seal:active{scale:.9;transition-duration:.08s}
@@ -213,6 +212,7 @@ body.presenting .stage{top:0}
 .wish.hot .wish-in{scale:1.22;rotate:0deg;box-shadow:0 26px 44px -22px rgba(30,40,30,.55)}
 .wish.hot p{-webkit-line-clamp:unset}
 .wish.fresh .wish-in{animation:pop 1.4s ease 2}
+@media (max-width:640px){.wish-in{max-width:min(210px,62vw);padding:8px 11px 9px}.wish .to{font-size:10px;margin-bottom:2px}.wish p{font-size:14.5px;line-height:1.28}.wish.hot .wish-in{scale:1.12}}
 @keyframes pop{0%{box-shadow:0 0 0 0 rgba(123,30,43,.35)}100%{box-shadow:0 0 0 16px rgba(123,30,43,0)}}
 .dock{position:fixed;z-index:30;left:50%;translate:-50% 0;bottom:calc(14px + env(safe-area-inset-bottom,0px));display:none;gap:8px;align-items:center;flex-wrap:wrap;justify-content:center;width:max-content;max-width:calc(100vw - 150px)}
 body[data-view="tuong"] .dock{display:flex}
@@ -234,30 +234,30 @@ body.presenting .dock:hover{opacity:1}
 @media (max-width:640px){.legend,.dock .present{display:none}.dock{left:12px;translate:none;justify-content:flex-start;max-width:calc(100vw - 110px)}.chip-btn{padding:7px 11px;white-space:nowrap}}
 
 /* ---------- Vinyl player ---------- */
-.vinyl{position:fixed;z-index:85;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));width:134px;height:118px;border:0;padding:0;background:none;cursor:pointer}
+.vinyl{position:fixed;z-index:85;right:max(14px,env(safe-area-inset-right,0px));bottom:calc(12px + env(safe-area-inset-bottom,0px));width:104px;height:92px;border:0;padding:0;background:none;cursor:pointer}
 body[data-view="admin"] .vinyl{display:none}
 /* Bệ máy màu mực xanh rêu, viền sáng mảnh như gỗ sơn mài */
 .vinyl .base{position:absolute;inset:0;border-radius:14px;background:linear-gradient(160deg,#2C4C3F,#1E3A2F 55%,#162C23);border:1px solid #0F211A;box-shadow:inset 0 1px 0 rgba(251,249,242,.18),inset 0 0 0 5px rgba(251,249,242,.04),0 16px 30px -14px rgba(20,35,28,.6)}
-.vinyl .disc{position:absolute;left:9px;top:9px;width:100px;height:100px;border-radius:50%;
-  background:radial-gradient(circle,#7B1E2B 0 17px,#2B2B2B 17.5px 19.5px,transparent 20px),repeating-radial-gradient(circle,#1E1E1E 0 2px,#2C2C2C 2px 3px),#222;
+.vinyl .disc{position:absolute;left:7px;top:7px;width:78px;height:78px;border-radius:50%;
+  background:radial-gradient(circle,#7B1E2B 0 13px,#2B2B2B 13.5px 15px,transparent 15.5px),repeating-radial-gradient(circle,#1E1E1E 0 2px,#2C2C2C 2px 3px),#222;
   box-shadow:inset 0 0 0 2px #111,0 0 0 3px rgba(251,249,242,.12),0 4px 10px rgba(0,0,0,.45);animation:spin 3.2s linear infinite;animation-play-state:paused}
 .vinyl .disc::before{content:"";position:absolute;inset:0;border-radius:50%;background:conic-gradient(from 30deg,transparent 0 40deg,rgba(255,255,255,.14) 55deg,transparent 70deg 220deg,rgba(255,255,255,.1) 235deg,transparent 250deg)}
 .vinyl .disc::after{content:"";position:absolute;left:50%;top:50%;width:7px;height:7px;margin:-3.5px;border-radius:50%;background:var(--sheet)}
-.vinyl .disc svg{position:absolute;left:50%;top:50%;width:30px;height:30px;margin:-15px}
-.vinyl .arm{position:absolute;right:8px;top:8px;width:21px;height:82px;transform-origin:50% 12.5%;rotate:-6deg;transition:rotate .8s cubic-bezier(.3,.8,.3,1)}
+.vinyl .disc svg{position:absolute;left:50%;top:50%;width:23px;height:23px;margin:-11.5px}
+.vinyl .arm{position:absolute;right:6px;top:6px;width:16px;height:64px;transform-origin:50% 12.5%;rotate:-6deg;transition:rotate .8s cubic-bezier(.3,.8,.3,1)}
 .vinyl.on .arm{rotate:20deg}
 .vinyl.on .disc{animation-play-state:running}
 @keyframes spin{to{transform:rotate(360deg)}}
-.vinyl .tip{position:absolute;right:calc(100% + 8px);bottom:32px;white-space:nowrap;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--ink);opacity:0;translate:6px 0;transition:opacity .25s,translate .25s;pointer-events:none}
+.vinyl .tip{position:absolute;right:calc(100% + 8px);bottom:26px;white-space:nowrap;background:#fff;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:12.5px;color:var(--ink);opacity:0;translate:6px 0;transition:opacity .25s,translate .25s;pointer-events:none}
 .vinyl:hover .tip,.vinyl:focus-visible .tip,.vinyl.hint .tip{opacity:1;translate:0 0}
-.vinyl .notes{position:absolute;left:36px;top:-6px;pointer-events:none}
+.vinyl .notes{position:absolute;left:28px;top:-6px;pointer-events:none}
 .vinyl .notes span{position:absolute;font-size:16px;color:var(--leaf-700);opacity:0}
 .vinyl.on .notes span{animation:note 3s ease-out infinite}
 .vinyl.on .notes span:nth-child(2){animation-delay:1s;left:18px;color:var(--blossom-ink)}
 .vinyl.on .notes span:nth-child(3){animation-delay:2s;left:-10px}
 @keyframes note{0%{opacity:0;transform:translate(0,10px) scale(.6)}20%{opacity:1}100%{opacity:0;transform:translate(-14px,-46px) scale(1.1) rotate(-15deg)}}
-@media (max-width:640px){body:not([data-view="tuong"]) main{padding-bottom:96px}body:not([data-view="tuong"]) .vinyl .tip{display:none}}
-@media (max-width:640px){.vinyl{width:88px;height:78px}.vinyl .disc{left:6px;top:6px;width:66px;height:66px;background:radial-gradient(circle,#7B1E2B 0 11px,#2B2B2B 11.5px 13px,transparent 13.5px),repeating-radial-gradient(circle,#1E1E1E 0 2px,#2C2C2C 2px 3px),#222}.vinyl .disc svg{width:20px;height:20px;margin:-10px}.vinyl .arm{right:5px;top:5px;width:14px;height:56px}.vinyl .tip{right:0;bottom:calc(100% + 8px)}.vinyl .notes{display:none}}
+@media (max-width:640px){body:not([data-view="tuong"]) main{padding-bottom:84px}body:not([data-view="tuong"]) .vinyl .tip{display:none}}
+@media (max-width:640px){.vinyl{width:72px;height:64px}.vinyl .disc{left:5px;top:5px;width:54px;height:54px;background:radial-gradient(circle,#7B1E2B 0 9px,#2B2B2B 9.5px 10.5px,transparent 11px),repeating-radial-gradient(circle,#1E1E1E 0 2px,#2C2C2C 2px 3px),#222}.vinyl .disc svg{width:16px;height:16px;margin:-8px}.vinyl .arm{right:4px;top:4px;width:11px;height:44px}.vinyl .tip{right:0;bottom:calc(100% + 8px)}.vinyl .notes{display:none}}
 
 /* ---------- Generic page ---------- */
 .page{max-width:1200px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:32px 64px}
