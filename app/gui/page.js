@@ -1,18 +1,17 @@
 "use client";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { signIn, signOut } from "next-auth/react";
 import { fold } from "@/lib/fold";
+import { authErrorFeedback, consumeAuthError } from "@/lib/auth-feedback";
 
 const mmss = (ms) => { const s = Math.ceil(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
-const ERR = {
-  email: "Tài khoản SSO không có email hợp lệ hoặc email không thuộc tên miền được phép.",
-  AccessDenied: "Tài khoản này không được phép đăng nhập gửi lời chúc.",
-  OAuthSignin: "Chưa kết nối được với hệ thống SSO. Bạn thử lại sau ít phút nhé.",
-  OAuthCallback: "Không xác nhận được phiên đăng nhập SSO. Bạn thử đăng nhập lại nhé.",
-  Callback: "Không hoàn tất được đăng nhập. Bạn thử lại nhé.",
-  Configuration: "Đăng nhập SSO chưa được cấu hình đầy đủ. Vui lòng liên hệ ban tổ chức.",
-  CredentialsSignin: "Email đăng nhập thử không hợp lệ hoặc không thuộc tên miền được phép.",
-};
+
+async function clearLoginSession() {
+  await signOut({ redirect: false, callbackUrl: "/gui" });
+  const response = await fetch("/api/auth/session", { cache: "no-store" });
+  const session = await response.json();
+  if (!response.ok || session?.user) throw new Error("SessionResetFailed");
+}
 
 export default function SendPage() {
   const [me, setMe] = useState(null);
@@ -26,37 +25,76 @@ export default function SendPage() {
   const [now, setNow] = useState(Date.now());
   const [loadedAt, setLoadedAt] = useState(Date.now());
   const [devEmail, setDevEmail] = useState("");
+  const [authError, setAuthError] = useState(null);
+  const [authBusy, setAuthBusy] = useState(false);
+  const authPending = useRef(false);
+  const loadRequest = useRef(null);
+  const currentUser = useRef(null);
 
   const loadMe = useCallback(async () => {
+    if (authPending.current) return;
+    loadRequest.current?.abort();
+    const controller = new AbortController();
+    loadRequest.current = controller;
     try {
-      const response = await fetch("/api/me", { cache: "no-store" });
+      const response = await fetch("/api/me", { cache: "no-store", signal: controller.signal });
       const m = await response.json().catch(() => null);
+      if (controller.signal.aborted) return;
+      if (m?.user) setAuthError(null);
       if (!response.ok || !m) {
-        setMe({ user: m?.user || null, error: m?.error || "Không tải được thông tin đăng nhập. Bạn thử lại nhé." });
+        setMe({ ...m, user: m?.user || null, error: m?.error || "Không tải được thông tin đăng nhập. Bạn thử lại nhé." });
         return;
       }
       if (m.user) {
-        const teacherResponse = await fetch("/api/teachers", { cache: "no-store" });
+        const teacherResponse = await fetch("/api/teachers", { cache: "no-store", signal: controller.signal });
         const list = await teacherResponse.json().catch(() => null);
+        if (controller.signal.aborted) return;
         if (!teacherResponse.ok || !Array.isArray(list)) {
-          setMe({ user: m.user, error: "Chưa tải được danh sách thầy cô. Bạn thử lại nhé." });
+          setMe({ ...m, error: "Chưa tải được danh sách thầy cô. Bạn thử lại nhé." });
           return;
         }
         setTeachers(list);
+      } else setTeachers([]);
+      if (currentUser.current !== m.user) {
+        setMode(m.sentGeneral ? "one" : "all");
+        setTeacherName(""); setText(""); setResult(null);
       }
+      currentUser.current = m.user;
       setMe(m);
       if (m.sentGeneral) setMode("one");
     } catch {
-      setMe({ error: "Không kết nối được máy chủ. Bạn kiểm tra kết nối và thử lại nhé." });
+      if (!controller.signal.aborted) setMe({ error: "Không kết nối được máy chủ. Bạn kiểm tra kết nối và thử lại nhé." });
     } finally {
-      setLoadedAt(Date.now());
+      if (!controller.signal.aborted) {
+        const timestamp = Date.now();
+        setLoadedAt(timestamp); setNow(timestamp);
+      }
     }
   }, []);
 
   useEffect(() => {
-    loadMe();
-    const e = new URLSearchParams(location.search).get("loi") || new URLSearchParams(location.search).get("error");
-    if (e) setResult({ type: "bad", title: "Chưa đăng nhập được", text: ERR[e] || "Đăng nhập không thành công, bạn thử lại nhé." });
+    const refresh = (event) => {
+      if (event?.persisted || event?.type === "popstate") setAuthError(null);
+      const error = consumeAuthError(location.href, history);
+      if (error) setAuthError(error);
+      loadMe();
+    };
+    const visible = () => { if (!document.hidden) refresh(); };
+    const sessionChanged = (event) => { if (event.key === "nextauth.message") refresh(); };
+    refresh();
+    addEventListener("focus", refresh);
+    addEventListener("pageshow", refresh);
+    addEventListener("popstate", refresh);
+    addEventListener("storage", sessionChanged);
+    document.addEventListener("visibilitychange", visible);
+    return () => {
+      loadRequest.current?.abort();
+      removeEventListener("focus", refresh);
+      removeEventListener("pageshow", refresh);
+      removeEventListener("popstate", refresh);
+      removeEventListener("storage", sessionChanged);
+      document.removeEventListener("visibilitychange", visible);
+    };
   }, [loadMe]);
 
   const elapsed = now - loadedAt;
@@ -74,14 +112,48 @@ export default function SendPage() {
   const len = [...text].length;
 
   async function login(provider, options = {}) {
-    if (busy) return;
-    setBusy(true); setResult(null);
+    if (authPending.current) return;
+    authPending.current = true;
+    loadRequest.current?.abort();
+    setAuthBusy(true); setAuthError(null); setResult(null);
     try {
-      await signIn(provider, { ...options, callbackUrl: "/gui" });
+      consumeAuthError(location.href, history);
+      await clearLoginSession();
+      setMe((value) => value ? { ...value, user: null } : value);
+      setTeachers([]);
+      if (provider === "dev") {
+        const response = await signIn(provider, { ...options, callbackUrl: "/gui", redirect: false });
+        if (response?.error) return setAuthError(authErrorFeedback(response.error));
+        if (!response?.ok) throw new Error("SignInFailed");
+        location.replace("/gui");
+      } else {
+        await signIn(provider, { ...options, callbackUrl: "/gui" });
+      }
     } catch {
-      setResult({ type: "bad", title: "Chưa đăng nhập được", text: "Không kết nối được máy chủ, bạn thử lại nhé." });
+      setAuthError({ type: "bad", title: "Chưa đăng nhập được", text: "Chưa khởi tạo được phiên đăng nhập mới. Bạn thử lại nhé." });
     } finally {
-      setBusy(false);
+      authPending.current = false;
+      setAuthBusy(false);
+    }
+  }
+
+  async function logout() {
+    if (authPending.current) return;
+    authPending.current = true;
+    loadRequest.current?.abort();
+    setAuthBusy(true); setAuthError(null); setResult(null);
+    try {
+      const response = await fetch("/api/auth/federated-logout", { cache: "no-store" });
+      if (!response.ok) throw new Error("LogoutUnavailable");
+      const { url } = await response.json();
+      if (!url) throw new Error("LogoutUnavailable");
+      await clearLoginSession();
+      location.replace(url);
+    } catch {
+      setAuthError({ type: "bad", title: "Chưa đăng xuất được", text: "Không kết nối được máy chủ. Bạn thử đăng xuất lại nhé." });
+    } finally {
+      authPending.current = false;
+      setAuthBusy(false);
     }
   }
 
@@ -104,6 +176,9 @@ export default function SendPage() {
         setResult(d.status === "approved"
           ? { type: "ok", text: "Lời chúc sẽ xuất hiện trên tường trong giây lát." }
           : { type: "wait", text: "Lời chúc đã được lưu và đang chờ ban tổ chức duyệt. Duyệt xong sẽ tự lên tường." });
+      } else if (r.status === 401) {
+        setResult(null);
+        setAuthError({ type: "bad", title: "Cần đăng nhập lại", text: "Phiên đăng nhập đã kết thúc. Bạn đăng nhập lại để gửi lời chúc nhé." });
       } else setResult({ type: "bad", text: d.error || "Có lỗi xảy ra, bạn thử lại nhé." });
     } catch {
       setResult({ type: "bad", text: "Không kết nối được máy chủ, bạn thử lại nhé." });
@@ -112,12 +187,20 @@ export default function SendPage() {
     loadMe();
   }
 
+  const identity = me?.user && (
+    <div className="row" style={{ justifyContent: "space-between" }}>
+      <span className="user-pill">{me.user} <button type="button" disabled={authBusy || busy} onClick={logout}>{authBusy ? "Đang đăng xuất…" : "Đăng xuất"}</button></span>
+      <b className="small">{me.userName || me.user}</b>
+    </div>
+  );
+
   let card;
-  if (!me) card = <p className="muted">Đang tải…</p>;
+  if (!me) card = <SendSkeleton />;
   else if (me.error) {
     card = (
       <div className="stack">
-        {me.user && <span className="user-pill">{me.user} <button type="button" onClick={() => signOut({ callbackUrl: "/gui" })}>Đăng xuất</button></span>}
+        {identity}
+        {authError && <Result r={authError} />}
         <Result r={{ type: "bad", title: "Chưa tải được dữ liệu", text: me.error }} />
         <button className="btn" type="button" onClick={() => { setMe(null); loadMe(); }}>Thử lại</button>
       </div>
@@ -131,13 +214,13 @@ export default function SendPage() {
           <b style={{ fontSize: 17 }}>Đăng nhập để gửi lời chúc</b>
           <p className="muted small" style={{ margin: "6px 0 0", maxWidth: "40ch" }}>Dùng tài khoản {me.ssoName || "SLINK PTIT"}. Tài khoản chỉ dùng để giới hạn số lần gửi, không hiển thị ra ngoài.</p>
         </div>
-        {result && <div style={{ width: "100%" }}><Result r={result} /></div>}
-        {me.sso && <button className="btn" type="button" disabled={busy} onClick={() => login("ptit")}>{busy ? "Đang chuyển tới SSO…" : `Đăng nhập bằng ${me.ssoName || "SLINK PTIT"}`}</button>}
+        {authError && <div style={{ width: "100%" }}><Result r={authError} /></div>}
+        {me.sso && <button className="btn" type="button" disabled={authBusy} onClick={() => login("ptit")}>{authBusy ? "Đang chuyển tới SSO…" : `${authError ? "Đăng nhập lại bằng" : "Đăng nhập bằng"} ${me.ssoName || "SLINK PTIT"}`}</button>}
         {!me.sso && !me.devLogin && <p className="small muted">Chưa cấu hình đăng nhập SSO.</p>}
         {me.devLogin && (
           <form className="row" style={{ justifyContent: "center" }} onSubmit={(e) => { e.preventDefault(); login("dev", { email: devEmail }); }}>
             <input className="field" id="devEmail" type="email" required placeholder="email sinh viên (đăng nhập thử)" value={devEmail} onChange={(e) => setDevEmail(e.target.value)} style={{ width: 260 }} />
-            <button className="btn ghost" type="submit" disabled={busy}>Đăng nhập thử</button>
+            <button className="btn ghost" type="submit" disabled={authBusy}>Đăng nhập thử</button>
           </form>
         )}
       </div>
@@ -145,9 +228,8 @@ export default function SendPage() {
   } else {
     card = (
       <form className="stack" onSubmit={submit} noValidate>
-        <div className="row" style={{ justifyContent: "space-between" }}>
-          <span className="user-pill">{me.user} <button type="button" onClick={() => signOut({ callbackUrl: "/gui" })}>Đăng xuất</button></span>
-        </div>
+        {identity}
+        {authError && <Result r={authError} />}
         {!me.window.open && <div className="result wait"><span>◷</span><span>{me.window.message}</span></div>}
         <div>
           <span className="lbl">Bạn muốn gửi tới</span>
@@ -217,7 +299,7 @@ export default function SendPage() {
           </div>
           <div className="card">
             <h3 style={{ margin: "0 0 6px", fontSize: 15 }}>Lượt gửi của bạn</h3>
-            {me?.user && !me.error ? (
+            {!me ? <SendSkeleton compact /> : me.user && !me.error ? (
               <>
                 <div className="progress"><span>Lời chúc chung</span><b>{me.sentGeneral ? "Đã gửi" : "Còn 1 lượt"}</b></div>
                 <div className="progress"><span>Lời chúc riêng</span><b>{sentTo.size}/{teachers.length} thầy cô</b></div>
@@ -229,6 +311,33 @@ export default function SendPage() {
           </div>
         </aside>
       </div>
+    </div>
+  );
+}
+
+function SendSkeleton({ compact = false }) {
+  return (
+    <div role="status" aria-busy="true">
+      <span className="sr-only">{compact ? "Đang tải lượt gửi…" : "Đang tải thông tin gửi lời chúc…"}</span>
+      {compact ? (
+        <div className="stack" aria-hidden="true" style={{ paddingBlock: 10 }}>
+          <span className="skeleton skeleton-line" />
+          <span className="skeleton skeleton-line" style={{ width: "78%" }} />
+        </div>
+      ) : (
+        <div className="stack send-skeleton" aria-hidden="true">
+          <span className="skeleton skeleton-account" />
+          <div className="stack" style={{ gap: 10 }}>
+            <span className="skeleton skeleton-line" style={{ width: "28%" }} />
+            <div className="seg"><span className="skeleton skeleton-choice" /><span className="skeleton skeleton-choice" /></div>
+          </div>
+          <div className="stack" style={{ gap: 10 }}>
+            <span className="skeleton skeleton-line" style={{ width: "20%" }} />
+            <span className="skeleton skeleton-message" />
+          </div>
+          <span className="skeleton skeleton-action" />
+        </div>
+      )}
     </div>
   );
 }

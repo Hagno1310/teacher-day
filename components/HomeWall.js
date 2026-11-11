@@ -11,7 +11,7 @@ function InviteDialog({ active }) {
     try { if (sessionStorage.getItem("invite-seen")) return; } catch {}
     // Chỉ mời gửi khi cổng còn mở (OPEN_AT/CLOSE_AT ở server); đã đóng thì tường chỉ để đọc
     let t, gone = false;
-    fetch("/api/me").then((r) => r.json()).then((d) => {
+    fetch("/api/me", { cache: "no-store" }).then((r) => r.json()).then((d) => {
       if (gone || !d.window?.open) return;
       t = setTimeout(() => {
         if (document.body.classList.contains("presenting")) return;
@@ -45,16 +45,25 @@ export default function HomeWall() {
   const [presenting, setPresenting] = useState(false);
 
   useEffect(() => {
-    document.body.classList.toggle("presenting", presenting);
-    const onFs = () => { if (!document.fullscreenElement) setPresenting(false); };
+    const onFs = () => setPresenting(Boolean(document.fullscreenElement));
+    onFs();
     document.addEventListener("fullscreenchange", onFs);
-    return () => { document.removeEventListener("fullscreenchange", onFs); document.body.classList.remove("presenting"); };
+    return () => document.removeEventListener("fullscreenchange", onFs);
+  }, []);
+
+  useEffect(() => {
+    document.body.classList.toggle("presenting", presenting);
+    return () => document.body.classList.remove("presenting");
   }, [presenting]);
 
   const togglePresent = async () => {
-    const next = !presenting;
-    setPresenting(next);
-    try { next ? await document.documentElement.requestFullscreen?.() : document.fullscreenElement && (await document.exitFullscreen()); } catch {}
+    try {
+      if (document.fullscreenElement) await document.exitFullscreen();
+      else await document.documentElement.requestFullscreen?.();
+      setPresenting(Boolean(document.fullscreenElement));
+    } catch {
+      setPresenting(Boolean(document.fullscreenElement));
+    }
   };
 
   return (

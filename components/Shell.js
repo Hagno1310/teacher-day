@@ -28,7 +28,7 @@ export default function Shell({ children }) {
   useEffect(() => {
     const load = () => {
       fetch("/api/wishes").then((r) => r.json()).then((d) => setCount(d.length)).catch(() => {});
-      fetch("/api/me").then((r) => r.json()).then((d) => setOpen(d.window?.open !== false)).catch(() => {});
+      fetch("/api/me", { cache: "no-store" }).then((r) => r.json()).then((d) => setOpen(d.window?.open !== false)).catch(() => {});
     };
     load();
     const t = setInterval(load, 30_000);
