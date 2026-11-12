@@ -20,10 +20,26 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    # Chỉ mở trong máy; bên ngoài vào qua Caddy (HTTPS)
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     volumes:
       - ./data:/app/data:ro
 
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    environment:
+      DOMAIN: ${DOMAIN:?thiếu DOMAIN trong .env, ví dụ teacherday.ript.vn}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+    depends_on:
+      - app
+
 volumes:
   pgdata:
+  caddy-data:

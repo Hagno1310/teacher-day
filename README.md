@@ -37,6 +37,8 @@ Nút **Tường lời chúc** dẫn tới `/?wall=1` để luôn xem tường v�
 
 ## Domain khi deploy
 
+**HTTPS có sẵn:** `docker-compose.yml` kèm Caddy tự cấp chứng chỉ Let's Encrypt cho `DOMAIN`. Trên server: bản ghi DNS `A` của `teacherday.ript.vn` trỏ về server, mở cổng 80 + 443, `.env` đặt `DOMAIN=teacherday.ript.vn` và `NEXTAUTH_URL=https://teacherday.ript.vn`, rồi `docker compose up -d --build`. App chỉ mở cổng 3000 trong máy; không cần Nginx bên dưới.
+
 Mặc định `.env.example` dùng `AUTH_TRUST_HOST=true` và không khai báo `NEXTAUTH_URL`. Đăng nhập, đăng xuất và callback lấy cùng domain/protocol của request bên ngoài. Chạy local trả về đúng host/cổng đang mở; sau proxy HTTPS trả về `https://domain-thuc-te`, không dùng host/cổng Docker bên trong. Cookie phiên HTTPS cũng được đọc đúng khi logout.
 
 Proxy kết thúc HTTPS phải ghi đè các header bên dưới theo domain/protocol công khai. Ví dụ trong `server` Nginx phục vụ đúng domain và HTTPS:
