@@ -1,5 +1,0 @@
-# HTTPS tự động (Let's Encrypt) cho domain trong .env. Cần DNS A trỏ về server và mở cổng 80 + 443.
-# Caddy gửi Host + X-Forwarded-Proto: https nên NextAuth/SSO nhận đúng https://{$DOMAIN}.
-{$DOMAIN} {
-	reverse_proxy app:3000
-}
